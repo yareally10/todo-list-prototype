@@ -1,12 +1,86 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 import hashlib
+import os
 import models
 import schemas
 from database import get_db
 
+# Get environment - defaults to development
+ENV = os.getenv("ENVIRONMENT", "development")
+
 app = FastAPI(title="Todo List API", version="1.0.0")
+
+# Configure CORS based on environment
+if ENV == "development":
+    cors_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ]
+else:
+    # Production origins - add your production URLs here
+    cors_origins = []
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# Helper function to get allowed origin for request
+def get_cors_headers(origin: str = None):
+    # Use the same cors_origins variable that was configured for the middleware
+    if origin in cors_origins or "*" in cors_origins:
+        return {
+            "Access-Control-Allow-Origin": origin if "*" not in cors_origins else "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true"
+        }
+    else:
+        # Return empty headers for unauthorized origins
+        return {}
+
+# Add OPTIONS handlers that respect environment configuration
+@app.options("/users/")
+async def options_users(request: Request):
+    origin = request.headers.get("origin")
+    headers = get_cors_headers(origin)
+    return Response(headers=headers)
+
+@app.options("/users/{user_id}")
+async def options_user(user_id: int, request: Request):
+    origin = request.headers.get("origin")
+    headers = get_cors_headers(origin)
+    return Response(headers=headers)
+
+@app.options("/lists/")
+async def options_lists(request: Request):
+    origin = request.headers.get("origin")
+    headers = get_cors_headers(origin)
+    return Response(headers=headers)
+
+@app.options("/lists/{list_id}")
+async def options_list(list_id: int, request: Request):
+    origin = request.headers.get("origin")
+    headers = get_cors_headers(origin)
+    return Response(headers=headers)
+
+@app.options("/tasks/")
+async def options_tasks(request: Request):
+    origin = request.headers.get("origin")
+    headers = get_cors_headers(origin)
+    return Response(headers=headers)
+
+@app.options("/tasks/{task_id}")
+async def options_task(task_id: int, request: Request):
+    origin = request.headers.get("origin")
+    headers = get_cors_headers(origin)
+    return Response(headers=headers)
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
