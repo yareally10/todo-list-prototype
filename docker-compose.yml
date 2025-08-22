@@ -27,9 +27,21 @@ services:
       POSTGRES_DB: todolist
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+      ENVIRONMENT: development
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
+
+  client:
+    build: ./client
+    container_name: todo-client
+    ports:
+      - "3000:5173"
+    volumes:
+      - ./client/src:/app/src
+    depends_on:
+      - api
     restart: unless-stopped
